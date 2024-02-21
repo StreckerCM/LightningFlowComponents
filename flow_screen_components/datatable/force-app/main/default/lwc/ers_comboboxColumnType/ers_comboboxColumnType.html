@@ -1,19 +1,41 @@
 <!-- Combobox Column Type -->
 <template>
-    <!-- slds-hide is used instead of template if, as it allows us to focus on the combobox when edit icon is clicked -->
-    <lightning-combobox
-        name="combobox"
-        class="slds-p-vertical_xx-small slds-p-horizontal_x-small slds-hide"
-        variant="label-hidden"
-        value={value}
-        options={options}
-        onchange={handleChange}
-        dropdown-alignment="auto"
-        onblur= {focusout}
-    ></lightning-combobox>
+
+    <!-- edit popover -->
+    <div tabindex="0" class="slds-float_left popContainer slds-hide" lwc:ref="editRef" >
+        <section class="slds-popover slds-float_left slds-popover_large" role="dialog">
+            <!-- slds-hide is used instead of template if, as it allows us to focus on the combobox when edit icon is clicked -->
+            <lightning-combobox
+                name="combobox"
+                class="slds-p-vertical_xx-small slds-p-horizontal_x-small"
+                variant="label-hidden"
+                value={value}
+                options={options}
+                dropdown-alignment="auto"
+                onchange={handleComboboxChange}
+            ></lightning-combobox>
+
+            <!--StreckerCM: Added Update all selected items option
+                TODO: Need to pass selected count to child control-->
+            <lightning-input 
+                class="slds-p-vertical_xx-small slds-p-horizontal_x-small"
+                type="checkbox" 
+                label={checkBoxLabel} 
+                value={updateAllSelected} 
+                onchange={handleCheckBoxChange}
+            ></lightning-input>
+
+            <!--StreckerCM: Popover footer with cancel and apply buttons -->
+            <div slot="footer" class="slds-grid slds-grid_align-end">
+                <lightning-button variant="neutral" label="Cancel" type=”reset” onclick={handleClick} ></lightning-button>
+                <lightning-button variant="brand" data-form-last-element="true" label="Apply" onclick={handleClick} ></lightning-button>
+            </div>
+        </section>
+    </div>
+    <!-- end edit popover -->
 
     <template if:false={editMode}>
-        <div class={cellClass}>
+        <div class={cellClass} lwc:ref="cellRef">
             <div class={valueClass}>
                 {value}
             </div>

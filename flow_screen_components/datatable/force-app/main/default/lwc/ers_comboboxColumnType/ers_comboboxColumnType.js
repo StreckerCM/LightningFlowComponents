@@ -9,6 +9,10 @@ export default class ers_comboboxColumnType extends LightningElement {
     @api value;
     @api alignment
     editMode = false;
+    updateAllSelected = false;
+
+    pendingValue;
+    pendingUpdateAllSelected = false;
 
     get options() {
         let _options = [];
@@ -21,6 +25,10 @@ export default class ers_comboboxColumnType extends LightningElement {
             _options.unshift(option);
         }
         return _options
+    }
+
+    get checkBoxLabel() {
+        return "Apply to All Selected";
     }
 
     //bump left/right depending on alignment. For center, we will align the grids on a the cell level
@@ -43,36 +51,66 @@ export default class ers_comboboxColumnType extends LightningElement {
         return _cellClass;
     }
 
-    handleChange(event) {
-        this.value = event.detail.value;
-        //We will mimic the standard oncellchange event from lightning datatable
-        let draftValue = {};
-        let draftValues = [];
-        draftValue[this.fieldName] = this.value;
-        draftValue[this.keyField] = this.keyFieldValue;
-        draftValues.push(draftValue);
+    handleClick(event) {
+        let clickedButtonLabel = event.target.label;
 
-        const customEvent = CustomEvent('combovaluechange', {
-            composed: true,
-            bubbles: true,
-            cancelable: true,
-            detail: {
-                draftValues: draftValues
-            },
-        });
-        this.dispatchEvent(customEvent)
+        if(clickedButtonLabel === "Apply") {
 
+            this.value = this.pendingValue;
+            this.updateAllSelected = this.pendingUpdateAllSelected;
+            //We will mimic the standard oncellchange event from lightning datatable
+            let draftValue = {};
+            let draftValues = [];
+            draftValue[this.fieldName] = this.value;
+            draftValue[this.keyField] = this.keyFieldValue;
+            draftValues.push(draftValue);
+
+
+            //StreckerCM: Add the updateAllSelected flag and feildName to the custom event
+            const customEvent = CustomEvent('combovaluechange', {
+                composed: true,
+                bubbles: true,
+                cancelable: true,
+                detail: {
+                    fieldName: this.fieldName,
+                    updateAllSelected: this.updateAllSelected,
+                    draftValues: draftValues
+                },
+            });
+
+            this.dispatchEvent(customEvent)
+
+            //Reset the Update All Selected Flag
+            this.updateAllSelected = false;
+        }
+
+        //Clear Pending Edits
+        this.pendingValue = undefined;
+        this.pendingUpdateAllSelected = false;
+        
         this.toggleEditMode();
-        //remove combobox and remove focus
-        this.template.querySelector("lightning-combobox").classList.add("slds-hide");
-        this.template.querySelector("lightning-combobox").blur();
+        //StreckerCM: Remove the popover div
+        //TODO: remove focus from popover
+        this.refs.editRef.classList.add("slds-hide");
+
     }
+
+    handleComboboxChange(event) {
+        //StreckerCM: Temporary store the combobox value when editing
+        this.pendingValue = event.target.value;
+    }
+
+    handleCheckBoxChange(event){
+        //StreckerCM: Temporary store the update all selected flag when editing
+        this.pendingUpdateAllSelected = event.target.checked;
+     }
 
     editCombobox(){
         this.toggleEditMode();
-        //show the combobox & focus on it
-        this.template.querySelector("lightning-combobox").classList.remove("slds-hide");
-        this.template.querySelector("lightning-combobox").focus();
+        //StreckerCM: Show the popover div
+        //TODO: set focus to div
+        this.refs.editRef.classList.remove("slds-hide");
+        //this.template.querySelector("lightning-combobox").focus();
     }
 
     toggleEditMode() {
@@ -80,10 +118,12 @@ export default class ers_comboboxColumnType extends LightningElement {
     }
     
     //remove combobox when not focused
+    //ToDo: Make thos work for the popover div
     focusout() {
         if(this.editMode) {
             this.toggleEditMode();
-            this.template.querySelector("lightning-combobox").classList.add("slds-hide");
+            this.refs.editRef.classList.add("slds-hide");
         }
     }
+
 }

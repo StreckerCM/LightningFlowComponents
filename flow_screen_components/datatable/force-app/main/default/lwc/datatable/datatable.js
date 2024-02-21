@@ -1505,9 +1505,11 @@ export default class Datatable extends LightningElement {
         event.stopPropagation();
 
         //Manipulate the datatable draftValues
-        //Find if there is existing draftValue that matches the keyField
         let draftValues = this.template.querySelector('c-ers_custom-lightning-datatable').draftValues;
         let eventDraftValue = event.detail.draftValues[0]
+        let fieldName = event.detail.fieldName;
+        let updateAllSelected = event.detail.updateAllSelected
+
         let foundIndex = draftValues.findIndex(value => value[this.keyField] == eventDraftValue[this.keyField]);
 
         //If found, combine the draftValue
@@ -1518,6 +1520,32 @@ export default class Datatable extends LightningElement {
             draftValues.push(eventDraftValue);
         }
 
+        //StreckerCM: If update all is selected then update and add those to the draftValues
+        if(updateAllSelected)
+        {
+            let selectedRows = this.template.querySelector('c-ers_custom-lightning-datatable').selectedRows;
+            
+            selectedRows.forEach(row => {
+                let draftValue = {};
+                let draftValues = [];
+                draftValue[fieldName] = eventDraftValue[fieldName];
+                draftValue[this.keyField] = row.keyFieldValue;
+                draftValues.push(draftValue);
+
+                //If found, combine the draftValue
+                if(foundIndex > -1) {
+                    draftValues[foundIndex] = {...draftValues[foundIndex], ...draftValue};
+                } else {
+                    //else, add the new draft value
+                    draftValues.push(draftValue);
+                }
+
+            });
+
+        }
+  
+        event.draftValues = draftValues;
+        
         this.template.querySelector('c-ers_custom-lightning-datatable').draftValues = draftValues;
 
         //call the usual handleCellChange        
